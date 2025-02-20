@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 import socket
 import psutil
 import logging
+import requests
 
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -38,6 +39,7 @@ class RepoRequest(BaseModel):
 @app.get("/")
 def home():
     return {"message": "FastAPI is running successfully!"}
+
 
 @app.post("/deploy")
 async def deploy_repo(request: RepoRequest):
@@ -117,8 +119,9 @@ def deploy_flask_in_docker(repo_path, repo_id):
             raise HTTPException(status_code=500, detail=f"Docker build/run failed: {e}")
         # Configure Nginx
         configure_nginx_for_docker(repo_id, port)
-
-        return f"http://localhost/deployments/{repo_id}/"
+        aws_ip = get_public_ip()
+        public_url = f"http://{aws_ip}/deployments/{repo_id}/"
+        return public_url
     except Exception as e:
         logger.debug("error is ",e)
         raise HTTPException(status_code=500, detail=str(e))
@@ -214,6 +217,13 @@ def expose_port(port):
     public_url = ngrok.connect(port).public_url
     return 
     
+
+# Get AWS Public IP dynamically
+def get_public_ip():
+    try:
+        return requests.get("http://169.254.169.254/latest/meta-data/public-ipv4", timeout=2).text
+    except requests.RequestException:
+        return "35.171.26.238"  # Replace with hardcoded public IP if needed
 
 if __name__ == "__main__":
     import uvicorn
