@@ -220,10 +220,20 @@ def expose_port(port):
 
 # Get AWS Public IP dynamically
 def get_public_ip():
+    """Fetches the current public IP of the EC2 instance."""
     try:
-        return requests.get("http://169.254.169.254/latest/meta-data/public-ipv4", timeout=2).text
+        token = requests.put(
+            "http://169.254.169.254/latest/api/token",
+            headers={"X-aws-ec2-metadata-token-ttl-seconds": "21600"},
+            timeout=2
+        ).text
+        return requests.get(
+            "http://169.254.169.254/latest/meta-data/public-ipv4",
+            headers={"X-aws-ec2-metadata-token": token},
+            timeout=2
+        ).text
     except requests.RequestException:
-        return "35.171.26.238"  # Replace with hardcoded public IP if needed
+        return "localhost"
 
 if __name__ == "__main__":
     import uvicorn
