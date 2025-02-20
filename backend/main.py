@@ -41,7 +41,7 @@ async def deploy_repo(request: RepoRequest):
 
     # Validate URL
     if not repo_url.startswith("https://github.com/"):
-        raise HTTPException(status_code=400, detail="Invalid GitHub URL")
+        repo_url = repo_url.replace("https://github.com/", "git@github.com:")
 
     # Generate unique deployment ID
     repo_id = str(uuid.uuid4())[:8]
