@@ -175,4 +175,9 @@ def detect_project_type(repo_path):
 def expose_port(port):
     """Exposes a running local server to the internet."""
     public_url = ngrok.connect(port).public_url
-    return public_url
+    return 
+    
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
