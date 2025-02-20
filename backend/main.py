@@ -34,6 +34,11 @@ os.makedirs(CLONE_DIR, exist_ok=True)
 class RepoRequest(BaseModel):
     repo_url: str
 
+
+@app.get("/")
+def home():
+    return {"message": "FastAPI is running successfully!"}
+
 @app.post("/deploy")
 async def deploy_repo(request: RepoRequest):
     """Clones a GitHub repo and serves static files for an HTML project."""
