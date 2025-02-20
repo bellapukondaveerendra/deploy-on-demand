@@ -133,7 +133,7 @@ def find_available_port():
         return s.getsockname()[1]  # Return the assigned port
 
 
-def configure_nginx_for_docker(repo_id, port):
+def configure_nginx_for_docker_windows(repo_id, port):
     """Adds an Nginx reverse proxy for the Docker container and ensures it restarts properly."""
 
     nginx_config = f"""
@@ -146,8 +146,8 @@ def configure_nginx_for_docker(repo_id, port):
     }}
     """
 
-    # Append to deployments.conf
-    with open("C:/Users/veeru/nginx-1.26.3/conf/deployments.conf", "a") as f:
+    # Append to deployments.conf ( local: C:/Users/veeru/nginx-1.26.3/conf/deployments.conf)
+    with open("/etc/nginx/conf.d/deployments.conf", "a") as f:
         f.write(nginx_config + "\n")
 
     # Check if Nginx is running and terminate it
@@ -165,6 +165,36 @@ def configure_nginx_for_docker(repo_id, port):
         subprocess.run(["powershell", "Start-Process", "C:/Users/veeru/nginx-1.26.3/nginx.exe", "-Verb", "runAs"], check=True)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Nginx restart failed: {e}")
+
+
+def configure_nginx_for_docker(repo_id, port):
+    """Adds an Nginx reverse proxy for the Docker container and ensures it restarts properly."""
+
+    nginx_config = f"""
+    location ~ ^/deployments/{repo_id}/(.*)$ {{
+        proxy_pass http://localhost:{port}/;
+        rewrite ^/deployments/{repo_id}/(.*)$ /$1 break;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }}
+    """
+
+    # ✅ Correct path for Nginx deployments config on Ubuntu
+    nginx_conf_path = "/etc/nginx/conf.d/deployments.conf"
+
+    # Append new deployment rule
+    with open(nginx_conf_path, "a") as f:
+        f.write(nginx_config + "\n")
+
+    # ✅ Restart Nginx properly on Linux
+    try:
+        logger.debug("🔥 Restarting Nginx...")
+        subprocess.run(["sudo", "systemctl", "restart", "nginx"], check=True)
+        logger.debug("✅ Nginx restarted successfully!")
+    except Exception as e:
+        logger.error(f"❌ Nginx restart failed: {e}")
+        raise Exception(f"Nginx restart failed: {e}")
 
 def detect_project_type(repo_path):
     """Detects the type of project based on common files."""
