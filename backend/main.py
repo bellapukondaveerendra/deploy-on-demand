@@ -171,17 +171,18 @@ def configure_nginx_for_docker(repo_id, port):
     """Adds an Nginx reverse proxy for the Docker container and ensures it restarts properly."""
 
     nginx_config = f"""
-    location ~ ^/deployments/{repo_id}/(.*)$ {{
+    location /deployments/{repo_id}/ {{
         proxy_pass http://localhost:{port}/;
-        rewrite ^/deployments/{repo_id}/(.*)$ /$1 break;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_redirect off;
     }}
     """
 
+
     # ✅ Correct path for Nginx deployments config on Ubuntu
-    nginx_conf_path = "/etc/nginx/conf.d/deployments.conf"
+    nginx_conf_path = "/etc/nginx/conf.d/deployments_locations.conf"
 
     # Append new deployment rule
     with open(nginx_conf_path, "a") as f:
@@ -190,6 +191,7 @@ def configure_nginx_for_docker(repo_id, port):
     # ✅ Restart Nginx properly on Linux
     try:
         logger.debug("🔥 Restarting Nginx...")
+        subprocess.run(["sudo", "nginx", "-t"], check=True)  # Validate config
         subprocess.run(["sudo", "systemctl", "restart", "nginx"], check=True)
         logger.debug("✅ Nginx restarted successfully!")
     except Exception as e:
