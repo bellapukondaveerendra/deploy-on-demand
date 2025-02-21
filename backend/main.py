@@ -63,7 +63,8 @@ async def deploy_repo(request: RepoRequest):
             # Move static files to a public directory
             deploy_path = os.path.join("public_html", repo_id)
             shutil.copytree(repo_path, deploy_path)
-            public_url = f"http://localhost/deployments/{repo_id}/index.html"
+            aws_ip = get_public_ip()
+            public_url = f"http://{aws_ip}/deployments/{repo_id}/index.html"
         
         elif os.path.exists(os.path.join(repo_path, "app.py")):
             public_url = deploy_flask_in_docker(repo_path, repo_id)
